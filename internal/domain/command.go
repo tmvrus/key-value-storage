@@ -5,7 +5,7 @@ type CommandType string
 const (
 	CommandGet    CommandType = "GET"
 	CommandSet    CommandType = "SET"
-	CommandDelete CommandType = "Delete"
+	CommandDelete CommandType = "DELETE"
 )
 
 func (t CommandType) Valid() bool {
