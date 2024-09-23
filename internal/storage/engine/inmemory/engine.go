@@ -6,14 +6,12 @@ import (
 	"github.com/tmvrus/key-value-storage/internal/domain"
 )
 
-const initialSize = 100
-
 type engine struct {
 	data map[string]string
 }
 
 func New() *engine {
-	return &engine{data: make(map[string]string, initialSize)}
+	return &engine{data: make(map[string]string)}
 }
 
 func (e *engine) Set(_ context.Context, key, value string) error {
