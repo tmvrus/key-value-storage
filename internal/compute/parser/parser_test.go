@@ -59,10 +59,10 @@ func TestParse(t *testing.T) {
 		},
 	}
 
-	for _, c := range tt {
+	for i, c := range tt {
 		cmd, err := Parse(c.in)
 		if c.err {
-			require.Error(t, err)
+			require.Errorf(t, err, "iter %d", i)
 		} else {
 			require.Equal(t, c.out, cmd)
 		}
