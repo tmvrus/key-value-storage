@@ -7,75 +7,72 @@ import (
 	"github.com/tmvrus/key-value-storage/internal/domain"
 )
 
-type parserFunc func(string) (domain.Command, error)
+type parseArgFunc func([]string) (domain.Command, error)
 
-func getParser(s string) parserFunc {
-	m := map[domain.CommandType]parserFunc{
-		domain.CommandGet:    parseGet,
-		domain.CommandSet:    parseSet,
-		domain.CommandDelete: parseDelete,
-	}
-	for k, v := range m {
-		if strings.HasPrefix(s, string(k)) {
-			return v
-		}
-	}
-
-	return func(s string) (cmd domain.Command, err error) {
-		err = fmt.Errorf("unsupporterd operation")
-		return
-	}
-}
-
-func parseGet(s string) (cmd domain.Command, err error) {
-	parts := strings.Split(s, " ")
-	if len(parts) != 2 {
+func parseGet(args []string) (cmd domain.Command, err error) {
+	if len(args) != 1 {
 		err = fmt.Errorf("invalid arguments number for GET command")
 		return
 	}
-	if parts[1] == "" {
+	if args[0] == "" {
 		err = fmt.Errorf("empty arguments for GET command")
 		return
 	}
 
 	cmd.Type = domain.CommandGet
-	cmd.Key = parts[1]
+	cmd.Key = args[0]
 	return
 }
 
-func parseSet(s string) (cmd domain.Command, err error) {
-	parts := strings.Split(s, " ")
-	if len(parts) != 3 {
+func parseSet(args []string) (cmd domain.Command, err error) {
+	if len(args) != 2 {
 		err = fmt.Errorf("invalid arguments number for SET command")
 		return
 	}
-	if parts[1] == "" || parts[2] == "" {
+	if args[0] == "" || args[1] == "" {
 		err = fmt.Errorf("empty arguments for SET command")
 		return
 	}
 
 	cmd.Type = domain.CommandSet
-	cmd.Key = parts[1]
-	cmd.Value = parts[2]
+	cmd.Key = args[0]
+	cmd.Value = args[1]
 	return
 }
 
-func parseDelete(s string) (cmd domain.Command, err error) {
-	parts := strings.Split(s, " ")
-	if len(parts) != 2 {
+func parseDelete(args []string) (cmd domain.Command, err error) {
+	if len(args) != 1 {
 		err = fmt.Errorf("invalid arguments number for DELETE command")
 		return
 	}
-	if parts[1] == "" {
+	if args[0] == "" {
 		err = fmt.Errorf("empty arguments for DELETE command")
 		return
 	}
 
 	cmd.Type = domain.CommandDelete
-	cmd.Key = parts[1]
+	cmd.Key = args[0]
 	return
 }
 
 func Parse(s string) (cmd domain.Command, err error) {
-	return getParser(s)(s)
+	m := map[domain.CommandType]parseArgFunc{
+		domain.CommandGet:    parseGet,
+		domain.CommandSet:    parseSet,
+		domain.CommandDelete: parseDelete,
+	}
+
+	args := strings.Split(s, " ")
+	if len(args) < 2 {
+		err = fmt.Errorf("invalid arguments numbers")
+		return
+	}
+
+	f, ok := m[domain.CommandType(args[0])]
+	if !ok {
+		err = fmt.Errorf("unsupporterd operation")
+		return
+	}
+
+	return f(args[1:])
 }
