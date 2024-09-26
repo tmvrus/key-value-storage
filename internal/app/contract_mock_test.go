@@ -81,3 +81,56 @@ func (mr *MockstorageMockRecorder) Set(cxt, key, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*Mockstorage)(nil).Set), cxt, key, value)
 }
+
+// Mocksocket is a mock of socket interface.
+type Mocksocket struct {
+	ctrl     *gomock.Controller
+	recorder *MocksocketMockRecorder
+}
+
+// MocksocketMockRecorder is the mock recorder for Mocksocket.
+type MocksocketMockRecorder struct {
+	mock *Mocksocket
+}
+
+// NewMocksocket creates a new mock instance.
+func NewMocksocket(ctrl *gomock.Controller) *Mocksocket {
+	mock := &Mocksocket{ctrl: ctrl}
+	mock.recorder = &MocksocketMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *Mocksocket) EXPECT() *MocksocketMockRecorder {
+	return m.recorder
+}
+
+// Read mocks base method.
+func (m *Mocksocket) Read(p []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Read", p)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Read indicates an expected call of Read.
+func (mr *MocksocketMockRecorder) Read(p any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*Mocksocket)(nil).Read), p)
+}
+
+// Write mocks base method.
+func (m *Mocksocket) Write(p []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Write", p)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Write indicates an expected call of Write.
+func (mr *MocksocketMockRecorder) Write(p any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*Mocksocket)(nil).Write), p)
+}

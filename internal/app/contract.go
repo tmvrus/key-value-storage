@@ -2,11 +2,16 @@
 package app
 
 import (
-	"context"
+	"io"
+
+	stor "github.com/tmvrus/key-value-storage/internal/storage"
 )
 
 type storage interface {
-	Set(cxt context.Context, key, value string) error
-	Get(cxt context.Context, key string) (string, error)
-	Delete(cxt context.Context, key string) error
+	stor.Storage
+}
+
+type socket interface {
+	io.Reader
+	io.Writer
 }

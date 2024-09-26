@@ -1,72 +1,89 @@
 package app
 
 import (
-	"bufio"
 	"context"
+	"errors"
 	"fmt"
-	"io"
+	"log/slog"
+	"net"
+	"time"
 
-	"github.com/tmvrus/key-value-storage/internal/compute/parser"
-	"github.com/tmvrus/key-value-storage/internal/domain"
+	"github.com/tmvrus/key-value-storage/internal/config"
 )
 
 type App struct {
-	input  io.Reader
-	output io.Writer
+	log     *slog.Logger
+	storage storage
+	cfg     *config.Config
 
-	s storage
+	sessionLimiter chan struct{}
 }
 
-func New(reader io.Reader, writer io.Writer, s storage) App {
-	return App{input: reader, output: writer, s: s}
+func New(cfg *config.Config, s storage, l *slog.Logger) App {
+	return App{
+		log:            l,
+		storage:        s,
+		cfg:            cfg,
+		sessionLimiter: make(chan struct{}, cfg.Network.MaxConnections),
+	}
 }
 
-func (a App) write(s string) {
-	_, err := a.output.Write([]byte(s + "\n"))
+func (a App) Run(ctx context.Context) error {
+	l, err := net.Listen("tcp", a.cfg.Network.Address)
 	if err != nil {
-		// TODO: log here
+		return fmt.Errorf("net listen: %w", err)
 	}
-}
 
-func (a App) error(err error) {
-	msg := "ERROR: " + err.Error()
-	a.write(msg)
-}
+	a.log.Debug("ready to accept connections", "address", a.cfg.Network.Address)
 
-func (a App) doCmd(ctx context.Context, c domain.Command) (string, error) {
-	switch c.Type {
-	case domain.CommandGet:
-		return a.s.Get(ctx, c.Key)
-	case domain.CommandDelete:
-		return "", a.s.Delete(ctx, c.Key)
-	case domain.CommandSet:
-		return "", a.s.Set(ctx, c.Key, c.Value)
-	default:
-		return "", fmt.Errorf("invalid cmd type: %q", c.Type)
-	}
-}
+	go func() {
+		<-ctx.Done()
+		if err := l.Close(); err != nil {
+			a.log.Error("failed to close listener", "error", err.Error())
+		}
+	}()
 
-func (a App) Run(ctx context.Context) {
-	input := bufio.NewScanner(a.input)
-	for input.Scan() {
+	for {
+		select {
+		case <-ctx.Done():
+			a.log.Debug("got context done, stop application")
+			return ctx.Err()
+		default:
 
-		s := input.Text()
+		}
 
-		cmd, err := parser.Parse(s)
+		conn, err := l.Accept()
 		if err != nil {
-			a.error(err)
+			if !errors.Is(err, net.ErrClosed) {
+				a.log.Error("failed to accept connection", "error", err.Error())
+			}
 			continue
 		}
 
-		res, err := a.doCmd(ctx, cmd)
-		if err != nil {
-			a.error(err)
+		select {
+		case a.sessionLimiter <- struct{}{}:
+			a.log.Debug("start session", "src", conn.RemoteAddr().String())
+
+		default:
+			a.log.Debug("drop session due the limit", "src", conn.RemoteAddr().String())
+			if err := conn.Close(); err != nil {
+				a.log.Error("failed to close connection", "error", err.Error())
+			}
 			continue
 		}
 
-		if res == "" {
-			res = "OK"
-		}
-		a.write(res)
+		go func() {
+			defer func() {
+				if err := conn.Close(); err != nil {
+					a.log.Error("failed to close connection", "error", err.Error())
+				}
+			}()
+
+			start := time.Now()
+			newSession(a.log, a.storage, conn).start(ctx)
+			<-a.sessionLimiter
+
+			a.log.Debug("session finished", "src", conn.RemoteAddr().String(), "duration", time.Since(start).String())
+		}()
 	}
 }
