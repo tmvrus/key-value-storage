@@ -70,7 +70,7 @@ func Parse(s string) (cmd domain.Command, err error) {
 
 	f, ok := m[domain.CommandType(args[0])]
 	if !ok {
-		err = fmt.Errorf("unsupporterd operation")
+		err = fmt.Errorf("unsupported operation")
 		return
 	}
 
