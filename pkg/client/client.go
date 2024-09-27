@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"syscall"
 )
 
 const defaultReadBufferSize = 1024
@@ -44,17 +45,19 @@ func (c *Client) StartInteractionLoop(in io.Reader, out io.Writer) {
 	for {
 		cmd, err := input.ReadBytes(eolByte)
 		if err != nil {
-			if errors.Is(err, io.EOF) {
-				c.log.Debug("got EOL from cmd input")
+			c.log.Error("read cmd new comment", "error", err.Error())
+			if criticalError(err) {
 				return
 			}
-			c.log.Error("read cmd new comment", "error", err.Error())
 			continue
 		}
 
 		result, err := c.execute(cmd)
 		if err != nil {
 			c.log.Error("execute command", "error", err.Error(), "command", string(cmd))
+			if criticalError(err) {
+				return
+			}
 			continue
 		}
 
@@ -73,4 +76,8 @@ func (c *Client) StartInteractionLoop(in io.Reader, out io.Writer) {
 
 func NewClient(i readerWriter, log *slog.Logger) *Client {
 	return &Client{socket: i, log: log}
+}
+
+func criticalError(err error) bool {
+	return errors.Is(err, io.EOF) || errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET)
 }
