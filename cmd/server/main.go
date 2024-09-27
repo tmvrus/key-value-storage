@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/tmvrus/key-value-storage/internal/app"
 	"github.com/tmvrus/key-value-storage/internal/config"
@@ -33,10 +34,19 @@ func fillConfig(cfg *config.Config, fileName string) error {
 
 func initLogger(fileName, level string) *slog.Logger {
 	w := os.Stdout
-	f, err := os.Open(fileName)
+	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModeAppend|os.ModeExclusive)
 	if err != nil {
 		slog.Error("failed to open file for logging, use stdout", err.Error(), "file_name", fileName)
 	} else {
+		go func() {
+			t := time.NewTicker(time.Second)
+			for range t.C {
+				if err := f.Sync(); err != nil {
+					slog.Error("failed to sync log file", "file_name", fileName, "error", err.Error())
+				}
+			}
+		}()
+
 		w = f
 	}
 
