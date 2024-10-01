@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -13,24 +12,9 @@ import (
 	"github.com/tmvrus/key-value-storage/internal/app"
 	"github.com/tmvrus/key-value-storage/internal/config"
 	"github.com/tmvrus/key-value-storage/internal/storage"
-	"gopkg.in/yaml.v3"
 )
 
 const defaultConfigFile = "./config.yml"
-
-func fillConfig(cfg *config.Config, fileName string) error {
-	data, err := os.ReadFile(fileName)
-	if err != nil {
-		return fmt.Errorf("read file: %w", err)
-	}
-
-	err = yaml.Unmarshal(data, cfg)
-	if err != nil {
-		return fmt.Errorf("unmarshal data: %w", err)
-	}
-
-	return nil
-}
 
 func initLogger(fileName, level string) *slog.Logger {
 	w := os.Stdout
@@ -73,7 +57,7 @@ func main() {
 	flag.Parse()
 
 	cfg := config.NewConfigWithDefaults()
-	err := fillConfig(cfg, configFile)
+	err := config.FillWithFile(cfg, configFile)
 	if err != nil {
 		slog.Error("failed to fill config, use default values", "error", err.Error())
 	}
