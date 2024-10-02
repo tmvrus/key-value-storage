@@ -2,7 +2,7 @@
 package app
 
 import (
-	"io"
+	"net"
 
 	stor "github.com/tmvrus/key-value-storage/internal/storage"
 )
@@ -12,6 +12,5 @@ type storage interface {
 }
 
 type socket interface {
-	io.Reader
-	io.Writer
+	net.Conn
 }

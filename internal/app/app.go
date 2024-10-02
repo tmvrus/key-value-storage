@@ -80,7 +80,11 @@ func (a App) Run(ctx context.Context) error {
 			}()
 
 			start := time.Now()
-			newSession(a.log, a.storage, conn).start(ctx)
+			cfg := sessionConfig{
+				timeout:    a.cfg.Network.IdleTimeout,
+				bufferSize: a.cfg.Network.MaxMessageSize.Int(),
+			}
+			newSession(a.log, a.storage, conn, cfg).start(ctx)
 			<-a.sessionLimiter
 
 			a.log.Debug("session finished", "src", conn.RemoteAddr().String(), "duration", time.Since(start).String())

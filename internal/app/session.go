@@ -3,66 +3,131 @@ package app
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
+	"syscall"
+	"time"
 
 	"github.com/tmvrus/key-value-storage/internal/compute/parser"
 	"github.com/tmvrus/key-value-storage/internal/domain"
 )
 
+type sessionConfig struct {
+	timeout    time.Duration
+	bufferSize int
+}
+
 type session struct {
 	log     *slog.Logger
 	storage storage
-	socket  socket
+	conn    socket
+	cfg     sessionConfig
 }
 
-func newSession(l *slog.Logger, st storage, s socket) session {
+func newSession(l *slog.Logger, st storage, s socket, cfg sessionConfig) session {
 	return session{
 		log:     l,
 		storage: st,
-		socket:  s,
+		conn:    s,
+		cfg:     cfg,
 	}
 }
 
 func (a session) start(ctx context.Context) {
-	input := bufio.NewScanner(a.socket)
-	for input.Scan() {
+	input := bufio.NewScanner(a.conn)
+	input.Buffer(make([]byte, a.cfg.bufferSize), a.cfg.bufferSize)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		if err := a.conn.SetReadDeadline(time.Now().Add(a.cfg.timeout)); err != nil {
+			a.handleError(err, "set read deadline")
+			return
+		}
+
+		if !input.Scan() {
+			a.handleError(input.Err(), "scan")
+			return
+		}
 
 		text := input.Text()
 		if err := input.Err(); err != nil {
-			a.log.Error("got error while read socket", "error", err.Error())
+			if a.handleError(err, "read command") || errors.Is(err, os.ErrDeadlineExceeded) {
+				return
+			}
 			continue
 		}
 
 		cmd, err := parser.Parse(text)
 		if err != nil {
-			a.writeError(err)
+			if a.handleError(a.writeError(err), "parse command") {
+				return
+			}
 			continue
 		}
 
 		res, err := a.doCmd(ctx, cmd)
 		if err != nil {
-			a.writeError(err)
+			if a.handleError(a.writeError(err), "exec cmd") {
+				return
+			}
 			continue
 		}
 
-		if res == "" {
-			res = "OK"
+		err = a.writeResult(res)
+		if a.handleError(err, "write result") {
+			return
 		}
-		a.writeStringLn(res)
 	}
 }
 
-func (a session) writeStringLn(s string) {
-	_, err := a.socket.Write([]byte(s + "\n"))
+func (a session) writeResult(res string) error {
+	if res == "" {
+		res = "OK"
+	}
+
+	err := a.writeStringLn(res)
 	if err != nil {
-		a.log.Error("failed to write socket", "error", err.Error())
+		return fmt.Errorf("write string: %w", err)
 	}
+
+	return nil
 }
 
-func (a session) writeError(err error) {
+func (a session) handleError(err error, message string) (stop bool) {
+	if err == nil {
+		return
+	}
+
+	a.log.Error("got session error", "error", fmt.Errorf("%s: %w", message, err))
+
+	stop = errors.Is(err, io.EOF) || errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET)
+	return
+}
+
+func (a session) writeStringLn(s string) error {
+	err := a.conn.SetWriteDeadline(time.Now().Add(a.cfg.timeout))
+	if err != nil {
+		return fmt.Errorf("set write deadline: %w", err)
+	}
+
+	_, err = a.conn.Write([]byte(s + "\n"))
+	if err != nil {
+		return fmt.Errorf("failed to write conn: %w", err)
+	}
+	return nil
+}
+
+func (a session) writeError(err error) error {
 	msg := "ERROR: " + err.Error()
-	a.writeStringLn(msg)
+	return a.writeStringLn(msg)
 }
 
 func (a session) doCmd(ctx context.Context, c domain.Command) (string, error) {

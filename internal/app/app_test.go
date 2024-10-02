@@ -50,6 +50,8 @@ func TestApp_Run(t *testing.T) {
 		cfg := &config.Config{}
 		cfg.Network.Address = findFreePort(t)
 		cfg.Network.MaxConnections = 1
+		cfg.Network.IdleTimeout = time.Minute
+		cfg.Network.MaxMessageSize = 1024
 
 		ctrl := gomock.NewController(t)
 		t.Cleanup(ctrl.Finish)
@@ -90,10 +92,6 @@ func TestApp_Run(t *testing.T) {
 
 		cancel()
 		<-stopped
-	})
-
-	t.Run("OK", func(t *testing.T) {
-		t.Parallel()
 	})
 }
 

@@ -11,7 +11,9 @@ package app
 
 import (
 	context "context"
+	net "net"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -105,32 +107,116 @@ func (m *Mocksocket) EXPECT() *MocksocketMockRecorder {
 	return m.recorder
 }
 
-// Read mocks base method.
-func (m *Mocksocket) Read(p []byte) (int, error) {
+// Close mocks base method.
+func (m *Mocksocket) Close() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", p)
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MocksocketMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*Mocksocket)(nil).Close))
+}
+
+// LocalAddr mocks base method.
+func (m *Mocksocket) LocalAddr() net.Addr {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LocalAddr")
+	ret0, _ := ret[0].(net.Addr)
+	return ret0
+}
+
+// LocalAddr indicates an expected call of LocalAddr.
+func (mr *MocksocketMockRecorder) LocalAddr() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LocalAddr", reflect.TypeOf((*Mocksocket)(nil).LocalAddr))
+}
+
+// Read mocks base method.
+func (m *Mocksocket) Read(b []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Read", b)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Read indicates an expected call of Read.
-func (mr *MocksocketMockRecorder) Read(p any) *gomock.Call {
+func (mr *MocksocketMockRecorder) Read(b any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*Mocksocket)(nil).Read), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*Mocksocket)(nil).Read), b)
+}
+
+// RemoteAddr mocks base method.
+func (m *Mocksocket) RemoteAddr() net.Addr {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoteAddr")
+	ret0, _ := ret[0].(net.Addr)
+	return ret0
+}
+
+// RemoteAddr indicates an expected call of RemoteAddr.
+func (mr *MocksocketMockRecorder) RemoteAddr() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoteAddr", reflect.TypeOf((*Mocksocket)(nil).RemoteAddr))
+}
+
+// SetDeadline mocks base method.
+func (m *Mocksocket) SetDeadline(t time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDeadline", t)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetDeadline indicates an expected call of SetDeadline.
+func (mr *MocksocketMockRecorder) SetDeadline(t any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDeadline", reflect.TypeOf((*Mocksocket)(nil).SetDeadline), t)
+}
+
+// SetReadDeadline mocks base method.
+func (m *Mocksocket) SetReadDeadline(t time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetReadDeadline", t)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetReadDeadline indicates an expected call of SetReadDeadline.
+func (mr *MocksocketMockRecorder) SetReadDeadline(t any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReadDeadline", reflect.TypeOf((*Mocksocket)(nil).SetReadDeadline), t)
+}
+
+// SetWriteDeadline mocks base method.
+func (m *Mocksocket) SetWriteDeadline(t time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetWriteDeadline", t)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetWriteDeadline indicates an expected call of SetWriteDeadline.
+func (mr *MocksocketMockRecorder) SetWriteDeadline(t any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWriteDeadline", reflect.TypeOf((*Mocksocket)(nil).SetWriteDeadline), t)
 }
 
 // Write mocks base method.
-func (m *Mocksocket) Write(p []byte) (int, error) {
+func (m *Mocksocket) Write(b []byte) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Write", p)
+	ret := m.ctrl.Call(m, "Write", b)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Write indicates an expected call of Write.
-func (mr *MocksocketMockRecorder) Write(p any) *gomock.Call {
+func (mr *MocksocketMockRecorder) Write(b any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*Mocksocket)(nil).Write), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*Mocksocket)(nil).Write), b)
 }
