@@ -2,6 +2,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -13,7 +14,7 @@ func Test_ParseSize(t *testing.T) {
 	tt := []struct {
 		name string
 		in   string
-		out  uint
+		out  int
 		err  bool
 	}{
 		{
@@ -79,7 +80,8 @@ func Test_Config(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "in_memory", cfg.Engine.Type)
 		require.Equal(t, "info", cfg.Logging.Level)
-		require.Equal(t, uint(4*1024), cfg.Network.MaxMessageSize.Uint())
+		require.Equal(t, 4*1024, cfg.Network.MaxMessageSize.Int())
+		require.Equal(t, time.Minute*5, cfg.Network.IdleTimeout)
 	})
 }
 

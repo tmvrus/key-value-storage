@@ -15,7 +15,7 @@ const (
 	LogLevelDebug      = "debug"
 )
 
-type MessageSizeBytes uint
+type MessageSizeBytes int
 
 func (m *MessageSizeBytes) UnmarshalYAML(node *yaml.Node) error {
 	size, err := parseBytes(node.Value)
@@ -27,16 +27,16 @@ func (m *MessageSizeBytes) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-func (m *MessageSizeBytes) Uint() uint {
-	return uint(*m)
+func (m *MessageSizeBytes) Int() int {
+	return int(*m)
 }
 
-func parseBytes(s string) (uint, error) {
-	const bytesInKB uint = 1024
+func parseBytes(s string) (int, error) {
+	const bytesInKB = 1024
 
 	kind := []struct {
 		kind  string
-		ratio uint
+		ratio int
 	}{
 		{"KB", bytesInKB}, {"MB", bytesInKB * bytesInKB}, {"B", 1},
 	}
@@ -47,15 +47,15 @@ func parseBytes(s string) (uint, error) {
 		}
 
 		sInt := strings.Replace(s, v.kind, "", 1)
-		size, err := strconv.ParseUint(sInt, 10, 32)
+		size, err := strconv.ParseInt(sInt, 10, 32)
 		if err != nil {
 			return 0, fmt.Errorf("faile to prase size %q: %w", s, err)
 		}
-		if size == 0 {
+		if size <= 0 {
 			return 0, fmt.Errorf("size must be grather than zero")
 		}
 
-		return uint(size) * v.ratio, nil
+		return int(size) * v.ratio, nil
 	}
 
 	return 0, fmt.Errorf("invalid size value: %q", s)
