@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tmvrus/key-value-storage/internal/app"
 	"github.com/tmvrus/key-value-storage/internal/config"
+	"github.com/tmvrus/key-value-storage/internal/server"
 	"github.com/tmvrus/key-value-storage/internal/storage"
 )
 
@@ -64,7 +64,7 @@ func main() {
 
 	log := initLogger(cfg.Logging.Output, cfg.Logging.Level)
 
-	err = app.
+	err = server.
 		New(cfg, storage.New(cfg), log).
 		Run(cxt)
 

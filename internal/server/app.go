@@ -1,4 +1,4 @@
-package app
+package server
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/tmvrus/key-value-storage/internal/config"
 )
 
-type App struct {
+type Server struct {
 	log     *slog.Logger
 	storage storage
 	cfg     *config.Config
@@ -19,8 +19,8 @@ type App struct {
 	sessionLimiter chan struct{}
 }
 
-func New(cfg *config.Config, s storage, l *slog.Logger) App {
-	return App{
+func New(cfg *config.Config, s storage, l *slog.Logger) Server {
+	return Server{
 		log:            l,
 		storage:        s,
 		cfg:            cfg,
@@ -28,7 +28,7 @@ func New(cfg *config.Config, s storage, l *slog.Logger) App {
 	}
 }
 
-func (a App) Run(ctx context.Context) error {
+func (a Server) Run(ctx context.Context) error {
 	l, err := net.Listen("tcp", a.cfg.Network.Address)
 	if err != nil {
 		return fmt.Errorf("net listen: %w", err)

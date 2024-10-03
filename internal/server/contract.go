@@ -1,5 +1,5 @@
 //go:generate go run go.uber.org/mock/mockgen@v0.4.0 -source=contract.go -destination=./contract_mock_test.go -package=app
-package app
+package server
 
 import (
 	"net"

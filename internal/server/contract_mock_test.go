@@ -7,7 +7,7 @@
 //
 
 // Package app is a generated GoMock package.
-package app
+package server
 
 import (
 	context "context"
