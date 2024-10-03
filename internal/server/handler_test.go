@@ -16,7 +16,7 @@ func TestApp_Session(t *testing.T) {
 	t.Parallel()
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	cfg := sessionConfig{
+	cfg := handlerConfig{
 		timeout:    time.Minute,
 		bufferSize: 1024,
 	}
@@ -25,7 +25,7 @@ func TestApp_Session(t *testing.T) {
 		t.Parallel()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		newSession(log, nil, nil, cfg).start(ctx)
+		newHandler(log, nil, nil, cfg).startHandling(ctx)
 	})
 
 	t.Run("handle SetReadDeadline error", func(t *testing.T) {
@@ -39,7 +39,7 @@ func TestApp_Session(t *testing.T) {
 
 		socketMock.EXPECT().SetReadDeadline(inFuture{t}).Return(fmt.Errorf("ERROR"))
 
-		newSession(log, nil, socketMock, cfg).start(ctx)
+		newHandler(log, nil, socketMock, cfg).startHandling(ctx)
 	})
 
 	t.Run("handle deadline/idle on read", func(t *testing.T) {
@@ -58,7 +58,7 @@ func TestApp_Session(t *testing.T) {
 			Read(gomock.Any()).
 			Return(0, os.ErrDeadlineExceeded)
 
-		newSession(log, nil, socketMock, cfg).start(ctx)
+		newHandler(log, nil, socketMock, cfg).startHandling(ctx)
 	})
 
 	t.Run("able to read command, execute and write response", func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestApp_Session(t *testing.T) {
 		socketMock.EXPECT().SetWriteDeadline(inFuture{t}).Return(nil)
 		socketMock.EXPECT().Write(byteMatcher{t: t, want: []byte("OK\n")}).Return(0, nil)
 
-		newSession(log, storMock, socketMock, cfg).start(ctx)
+		newHandler(log, storMock, socketMock, cfg).startHandling(ctx)
 	})
 
 	t.Run("able to fail conn read fail", func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestApp_Session(t *testing.T) {
 			Return(0, io.EOF).
 			Times(1)
 
-		newSession(log, storMock, socketMock, cfg).start(ctx)
+		newHandler(log, storMock, socketMock, cfg).startHandling(ctx)
 	})
 
 	t.Run("able to handle invalid command", func(t *testing.T) {
@@ -132,7 +132,7 @@ func TestApp_Session(t *testing.T) {
 		socketMock.EXPECT().SetWriteDeadline(inFuture{t}).Return(nil)
 		socketMock.EXPECT().Write(byteMatcher{t: t, want: []byte("ERROR: unsupported operation\n")}).Return(0, nil)
 
-		newSession(log, storMock, socketMock, cfg).start(ctx)
+		newHandler(log, storMock, socketMock, cfg).startHandling(ctx)
 	})
 
 	t.Run("handle SetWriteDeadline error", func(t *testing.T) {
@@ -158,7 +158,7 @@ func TestApp_Session(t *testing.T) {
 
 		socketMock.EXPECT().SetWriteDeadline(inFuture{t}).Return(fmt.Errorf("ERROR"))
 
-		newSession(log, storMock, socketMock, cfg).start(ctx)
+		newHandler(log, storMock, socketMock, cfg).startHandling(ctx)
 	})
 
 	t.Run("able to handle storage error", func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestApp_Session(t *testing.T) {
 		socketMock.EXPECT().SetWriteDeadline(inFuture{t}).Return(nil)
 		socketMock.EXPECT().Write(byteMatcher{t: t, want: []byte("ERROR: STORAGE\n")}).Return(0, nil)
 
-		newSession(log, storMock, socketMock, cfg).start(ctx)
+		newHandler(log, storMock, socketMock, cfg).startHandling(ctx)
 	})
 }
 

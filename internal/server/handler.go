@@ -15,20 +15,20 @@ import (
 	"github.com/tmvrus/key-value-storage/internal/domain"
 )
 
-type sessionConfig struct {
+type handlerConfig struct {
 	timeout    time.Duration
 	bufferSize int
 }
 
-type session struct {
+type handler struct {
 	log     *slog.Logger
 	storage storage
 	conn    socket
-	cfg     sessionConfig
+	cfg     handlerConfig
 }
 
-func newSession(l *slog.Logger, st storage, s socket, cfg sessionConfig) session {
-	return session{
+func newHandler(l *slog.Logger, st storage, s socket, cfg handlerConfig) handler {
+	return handler{
 		log:     l,
 		storage: st,
 		conn:    s,
@@ -36,7 +36,7 @@ func newSession(l *slog.Logger, st storage, s socket, cfg sessionConfig) session
 	}
 }
 
-func (a session) start(ctx context.Context) {
+func (a handler) startHandling(ctx context.Context) {
 	input := bufio.NewScanner(a.conn)
 	input.Buffer(make([]byte, a.cfg.bufferSize), a.cfg.bufferSize)
 
@@ -88,7 +88,7 @@ func (a session) start(ctx context.Context) {
 	}
 }
 
-func (a session) writeResult(res string) error {
+func (a handler) writeResult(res string) error {
 	if res == "" {
 		res = "OK"
 	}
@@ -101,18 +101,18 @@ func (a session) writeResult(res string) error {
 	return nil
 }
 
-func (a session) handleError(err error, message string) (stop bool) {
+func (a handler) handleError(err error, message string) (stop bool) {
 	if err == nil {
 		return
 	}
 
-	a.log.Error("got session error", "error", fmt.Errorf("%s: %w", message, err))
+	a.log.Error("got handler error", "error", fmt.Errorf("%s: %w", message, err))
 
 	stop = errors.Is(err, io.EOF) || errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET)
 	return
 }
 
-func (a session) writeStringLn(s string) error {
+func (a handler) writeStringLn(s string) error {
 	err := a.conn.SetWriteDeadline(time.Now().Add(a.cfg.timeout))
 	if err != nil {
 		return fmt.Errorf("set write deadline: %w", err)
@@ -125,12 +125,12 @@ func (a session) writeStringLn(s string) error {
 	return nil
 }
 
-func (a session) writeError(err error) error {
+func (a handler) writeError(err error) error {
 	msg := "ERROR: " + err.Error()
 	return a.writeStringLn(msg)
 }
 
-func (a session) doCmd(ctx context.Context, c domain.Command) (string, error) {
+func (a handler) doCmd(ctx context.Context, c domain.Command) (string, error) {
 	switch c.Type {
 	case domain.CommandGet:
 		return a.storage.Get(ctx, c.Key)
