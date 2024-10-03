@@ -7,38 +7,72 @@ import (
 	"github.com/tmvrus/key-value-storage/internal/domain"
 )
 
-func Parse(s string) (cmd domain.Command, err error) {
-	parts := strings.Split(s, " ")
-	t := domain.CommandType(parts[0])
+type parseArgFunc func([]string) (domain.Command, error)
 
-	switch len(parts) {
-	case 2:
-		if t != domain.CommandGet && t != domain.CommandDelete {
-			err = fmt.Errorf("invalid command %s for size %d", t, 2)
-			return
-		}
-		if parts[1] == "" {
-			err = fmt.Errorf("empty key")
-			return
-		}
-		cmd.Type = t
-		cmd.Key = parts[1]
-		return
-	case 3:
-		if t != domain.CommandSet {
-			err = fmt.Errorf("invalid command %s for size %d", t, 3)
-			return
-		}
-		if parts[1] == "" || parts[2] == "" {
-			err = fmt.Errorf("empty key or value")
-			return
-		}
-		cmd.Type = t
-		cmd.Key = parts[1]
-		cmd.Value = parts[2]
-		return
-	default:
-		err = fmt.Errorf("invalid parts count")
+func parseGet(args []string) (cmd domain.Command, err error) {
+	if len(args) != 1 {
+		err = fmt.Errorf("invalid arguments number for GET command")
 		return
 	}
+	if args[0] == "" {
+		err = fmt.Errorf("empty arguments for GET command")
+		return
+	}
+
+	cmd.Type = domain.CommandGet
+	cmd.Key = args[0]
+	return
+}
+
+func parseSet(args []string) (cmd domain.Command, err error) {
+	if len(args) != 2 {
+		err = fmt.Errorf("invalid arguments number for SET command")
+		return
+	}
+	if args[0] == "" || args[1] == "" {
+		err = fmt.Errorf("empty arguments for SET command")
+		return
+	}
+
+	cmd.Type = domain.CommandSet
+	cmd.Key = args[0]
+	cmd.Value = args[1]
+	return
+}
+
+func parseDelete(args []string) (cmd domain.Command, err error) {
+	if len(args) != 1 {
+		err = fmt.Errorf("invalid arguments number for DELETE command")
+		return
+	}
+	if args[0] == "" {
+		err = fmt.Errorf("empty arguments for DELETE command")
+		return
+	}
+
+	cmd.Type = domain.CommandDelete
+	cmd.Key = args[0]
+	return
+}
+
+func Parse(s string) (cmd domain.Command, err error) {
+	m := map[domain.CommandType]parseArgFunc{
+		domain.CommandGet:    parseGet,
+		domain.CommandSet:    parseSet,
+		domain.CommandDelete: parseDelete,
+	}
+
+	args := strings.Split(s, " ")
+	if len(args) < 2 {
+		err = fmt.Errorf("invalid arguments numbers")
+		return
+	}
+
+	f, ok := m[domain.CommandType(args[0])]
+	if !ok {
+		err = fmt.Errorf("unsupported operation")
+		return
+	}
+
+	return f(args[1:])
 }
