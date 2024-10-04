@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-const welcomeString = "Waiting for command\n"
+const welcomeString = "@> "
 
 type consoleInteractor struct {
 	io      readerWriter

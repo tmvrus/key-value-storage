@@ -19,6 +19,8 @@ func TestConsoleInteractor(t *testing.T) {
 
 		mock := NewMockreaderWriter(ctrl)
 
+		mock.EXPECT().Write([]byte(welcomeString)).Return(0, nil)
+
 		mock.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 			return copy(p, "ok\n"), nil
 		})
@@ -35,6 +37,8 @@ func TestConsoleInteractor(t *testing.T) {
 		t.Cleanup(ctrl.Finish)
 
 		mock := NewMockreaderWriter(ctrl)
+
+		mock.EXPECT().Write([]byte(welcomeString)).Return(0, nil)
 
 		mock.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 			return 0, fmt.Errorf("ERROR")

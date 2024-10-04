@@ -19,12 +19,10 @@ func newSender(conn readerWriter) netSender {
 	}
 }
 func (s netSender) Send(ctx context.Context, cmd string) (string, error) {
-	ch := s.send(cmd)
-
 	select {
 	case <-ctx.Done():
 		return "", ctx.Err()
-	case r := <-ch:
+	case r := <-s.send(cmd):
 		return r.result, r.err
 	}
 }
@@ -39,7 +37,7 @@ func (s netSender) send(cmd string) <-chan sendResult {
 	go func() {
 		defer close(r)
 
-		_, err := s.conn.Write([]byte(cmd))
+		_, err := s.conn.Write([]byte(cmd + "\n"))
 		if err != nil {
 			r <- sendResult{err: fmt.Errorf("write %w: ", err)}
 			return

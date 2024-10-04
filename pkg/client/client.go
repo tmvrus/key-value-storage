@@ -60,5 +60,9 @@ func NewClient(conn readerWriter, input io.Reader, output io.Writer, l *slog.Log
 }
 
 func criticalError(err error) bool {
-	return errors.Is(err, io.EOF) || errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET)
+	return errors.Is(err, io.EOF) ||
+		errors.Is(err, syscall.EPIPE) ||
+		errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, context.Canceled) ||
+		errors.Is(err, context.DeadlineExceeded)
 }

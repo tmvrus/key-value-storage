@@ -10,7 +10,8 @@ func New(fileName, level string) *slog.Logger {
 	w := os.Stdout
 	f, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModeAppend|os.ModeExclusive)
 	if err != nil {
-		slog.Error("failed to open file for logging, use stdout", err.Error(), "file_name", fileName)
+		slog.
+			Error("failed to open file for logging, use stdout", "error", err.Error(), "file_name", fileName)
 	} else {
 		go func() {
 			t := time.NewTicker(time.Second)

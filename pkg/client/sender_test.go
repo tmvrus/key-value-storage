@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -22,7 +23,7 @@ func Test_Sender(t *testing.T) {
 
 		mock := NewMockreaderWriter(ctrl)
 
-		mock.EXPECT().Write([]byte("test")).Return(0, nil)
+		mock.EXPECT().Write([]byte("test\n")).Return(0, nil)
 		mock.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 			return copy(p, []byte("ok")), nil
 		})
@@ -41,7 +42,7 @@ func Test_Sender(t *testing.T) {
 
 		mock := NewMockreaderWriter(ctrl)
 
-		mock.EXPECT().Write([]byte("test")).Return(0, fmt.Errorf("ERROR"))
+		mock.EXPECT().Write([]byte("test\n")).Return(0, fmt.Errorf("ERROR"))
 
 		_, err := newSender(mock).Send(ctx, "test")
 		require.Error(t, err)
@@ -56,7 +57,7 @@ func Test_Sender(t *testing.T) {
 
 		mock := NewMockreaderWriter(ctrl)
 
-		mock.EXPECT().Write([]byte("test")).Return(0, nil)
+		mock.EXPECT().Write([]byte("test\n")).Return(0, nil)
 		mock.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
 			return 0, fmt.Errorf("ERROR")
 		})
@@ -76,10 +77,15 @@ func Test_Sender(t *testing.T) {
 
 		mock := NewMockreaderWriter(ctrl)
 
-		mock.EXPECT().Write([]byte("test")).Return(0, nil).AnyTimes()
+		mock.EXPECT().Write([]byte("test\n")).DoAndReturn(func(_ []byte) (int, error) {
+			time.Sleep(time.Millisecond * 100)
+			return 0, fmt.Errorf("expected be stopped")
+		})
 
 		_, err := newSender(mock).Send(ctx, "test")
 		require.True(t, errors.Is(err, context.Canceled))
+
+		time.Sleep(time.Second) // avoid panic: Fail in goroutine after Test_Sender has completed
 	})
 
 }
