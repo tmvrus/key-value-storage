@@ -1,96 +1,83 @@
 package client
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"syscall"
 	"testing"
 
 	"go.uber.org/mock/gomock"
 )
 
+func setupClient(t *testing.T) (*Client, *Mockinteractor, *Mocksender) {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	senderMock := NewMocksender(ctrl)
+	interactorMock := NewMockinteractor(ctrl)
+	return &Client{
+		sender:     senderMock,
+		interactor: interactorMock,
+		log:        slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+	}, interactorMock, senderMock
+
+}
+
 func Test_Client(t *testing.T) {
 	t.Parallel()
 
-	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	ctx := context.Background()
 
 	t.Run("loop stopped when got io.EOF error from readerWriter", func(t *testing.T) {
 		t.Parallel()
 
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
+		client, im, _ := setupClient(t)
 
-		interactorMock := NewMockreaderWriter(ctrl)
+		im.EXPECT().ReadCommand().Return("", fmt.Errorf("not critical error"))
+		im.EXPECT().ReadCommand().Return("", fmt.Errorf("critical: %w", io.EOF))
 
-		hello := []byte("Waiting for command\n")
-		interactorMock.EXPECT().Write(byteMatcher{t: t, want: hello}).Return(0, nil)
-		interactorMock.EXPECT().Read(gomock.Any()).Return(0, io.EOF)
-
-		client := NewClient(nil, log)
-		client.StartInteractionLoop(interactorMock, interactorMock)
+		client.Start(ctx)
 	})
 
 	t.Run("read command, send and write result successfully", func(t *testing.T) {
 		t.Parallel()
 
-		ctrl := gomock.NewController(t)
-		t.Cleanup(ctrl.Finish)
-		interactorMock := NewMockreaderWriter(ctrl)
-		socketMock := NewMockreaderWriter(ctrl)
+		client, im, sm := setupClient(t)
 
-		hello := []byte("Waiting for command\n")
-		interactorMock.EXPECT().Write(byteMatcher{t: t, want: hello}).Return(0, nil)
+		im.EXPECT().ReadCommand().Return("COMMAND", nil)
+		sm.EXPECT().Send(ctx, "COMMAND").Return("RESULT", nil)
+		im.EXPECT().WriteResult("RESULT").Return(nil)
 
-		cmd := []byte("GET KEY\n")
-		interactorMock.
-			EXPECT().
-			Read(gomock.Any()).
-			DoAndReturn(func(p []byte) (int, error) {
-				return copy(p, cmd), io.EOF
-			}).Times(1)
+		im.EXPECT().ReadCommand().Return("", io.EOF)
 
-		matcher := byteMatcher{t: t, want: cmd}
-		socketMock.EXPECT().Write(matcher).Return(len(cmd), nil)
-
-		response := []byte("VALUE")
-
-		socketMock.
-			EXPECT().
-			Read(gomock.Any()).
-			DoAndReturn(func(p []byte) (int, error) {
-				return copy(p, response), nil
-			})
-
-		interactorMock.EXPECT().Write(byteMatcher{t: t, want: response}).Return(len(response), nil)
-		interactorMock.EXPECT().Write(byteMatcher{t: t, want: []byte("\n")}).Return(1, nil)
-
-		client := NewClient(socketMock, log)
-		client.StartInteractionLoop(interactorMock, interactorMock)
+		client.Start(ctx)
 	})
-}
 
-type byteMatcher struct {
-	t    *testing.T
-	want []byte
-}
+	t.Run("fail when send fails", func(t *testing.T) {
+		t.Parallel()
 
-func (m byteMatcher) Matches(x any) bool {
-	got, ok := x.([]byte)
-	if !ok {
-		m.t.Errorf("expected []byte got %T", x)
-		return false
-	}
+		client, im, sm := setupClient(t)
 
-	gotS := string(got)
-	wantS := string(m.want)
-	if gotS != wantS {
-		m.t.Errorf("expected %q, but got %q", wantS, gotS)
-		return false
-	}
+		im.EXPECT().ReadCommand().Return("COMMAND", nil)
+		sm.EXPECT().Send(ctx, "COMMAND").Return("", syscall.EPIPE)
 
-	return true
-}
+		client.Start(ctx)
+	})
 
-func (m byteMatcher) String() string {
-	return ""
+	t.Run("fail when write result fails", func(t *testing.T) {
+		t.Parallel()
+
+		client, im, sm := setupClient(t)
+
+		im.EXPECT().ReadCommand().Return("COMMAND", nil)
+		sm.EXPECT().Send(ctx, "COMMAND").Return("RESULT", nil)
+		im.EXPECT().WriteResult("RESULT").Return(syscall.ECONNRESET)
+
+		client.Start(ctx)
+	})
 }

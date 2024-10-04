@@ -10,6 +10,7 @@
 package client
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -66,4 +67,94 @@ func (m *MockreaderWriter) Write(p []byte) (int, error) {
 func (mr *MockreaderWriterMockRecorder) Write(p any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockreaderWriter)(nil).Write), p)
+}
+
+// Mockinteractor is a mock of interactor interface.
+type Mockinteractor struct {
+	ctrl     *gomock.Controller
+	recorder *MockinteractorMockRecorder
+}
+
+// MockinteractorMockRecorder is the mock recorder for Mockinteractor.
+type MockinteractorMockRecorder struct {
+	mock *Mockinteractor
+}
+
+// NewMockinteractor creates a new mock instance.
+func NewMockinteractor(ctrl *gomock.Controller) *Mockinteractor {
+	mock := &Mockinteractor{ctrl: ctrl}
+	mock.recorder = &MockinteractorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *Mockinteractor) EXPECT() *MockinteractorMockRecorder {
+	return m.recorder
+}
+
+// ReadCommand mocks base method.
+func (m *Mockinteractor) ReadCommand() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadCommand")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReadCommand indicates an expected call of ReadCommand.
+func (mr *MockinteractorMockRecorder) ReadCommand() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadCommand", reflect.TypeOf((*Mockinteractor)(nil).ReadCommand))
+}
+
+// WriteResult mocks base method.
+func (m *Mockinteractor) WriteResult(s string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteResult", s)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteResult indicates an expected call of WriteResult.
+func (mr *MockinteractorMockRecorder) WriteResult(s any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteResult", reflect.TypeOf((*Mockinteractor)(nil).WriteResult), s)
+}
+
+// Mocksender is a mock of sender interface.
+type Mocksender struct {
+	ctrl     *gomock.Controller
+	recorder *MocksenderMockRecorder
+}
+
+// MocksenderMockRecorder is the mock recorder for Mocksender.
+type MocksenderMockRecorder struct {
+	mock *Mocksender
+}
+
+// NewMocksender creates a new mock instance.
+func NewMocksender(ctrl *gomock.Controller) *Mocksender {
+	mock := &Mocksender{ctrl: ctrl}
+	mock.recorder = &MocksenderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *Mocksender) EXPECT() *MocksenderMockRecorder {
+	return m.recorder
+}
+
+// Send mocks base method.
+func (m *Mocksender) Send(arg0 context.Context, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Send", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Send indicates an expected call of Send.
+func (mr *MocksenderMockRecorder) Send(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*Mocksender)(nil).Send), arg0, arg1)
 }

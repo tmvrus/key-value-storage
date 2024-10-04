@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/tmvrus/key-value-storage/pkg/client"
 )
@@ -13,6 +16,9 @@ const defaultConnectionAddr = "localhost:32230"
 
 func main() {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	var serverAddr string
 	flag.StringVar(&serverAddr, "address", defaultConnectionAddr, "")
@@ -37,7 +43,6 @@ func main() {
 	}()
 
 	client.
-		NewClient(con, log).
-		StartInteractionLoop(os.Stdin, os.Stdout)
-
+		NewClient(con, os.Stdin, os.Stdout, log).
+		Start(ctx)
 }
