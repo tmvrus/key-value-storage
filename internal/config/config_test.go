@@ -82,6 +82,8 @@ func Test_Config(t *testing.T) {
 		require.Equal(t, "info", cfg.Logging.Level)
 		require.Equal(t, 4*1024, cfg.Network.MaxMessageSize.Int())
 		require.Equal(t, time.Minute*5, cfg.Network.IdleTimeout)
+		require.Equal(t, 10*1024*1024, cfg.Wal.MaxSegmentSize.Int())
+		require.Equal(t, time.Millisecond*10, cfg.Wal.FlushingBatchTimeout)
 	})
 }
 
@@ -96,4 +98,9 @@ network:
 logging:
   level: "info"
   output: "/log/output.log"
+wal:
+  flushing_batch_size: 100
+  flushing_batch_timeout: "10ms"
+  max_segment_size: "10MB"
+  data_directory: "/data/spider/wal"
 `)

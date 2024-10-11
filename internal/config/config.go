@@ -15,19 +15,19 @@ const (
 	LogLevelDebug      = "debug"
 )
 
-type MessageSizeBytes int
+type SizeBytes int
 
-func (m *MessageSizeBytes) UnmarshalYAML(node *yaml.Node) error {
+func (m *SizeBytes) UnmarshalYAML(node *yaml.Node) error {
 	size, err := parseBytes(node.Value)
 	if err != nil {
 		return fmt.Errorf("unmarshal error: %w", err)
 	}
 
-	*m = MessageSizeBytes(size)
+	*m = SizeBytes(size)
 	return nil
 }
 
-func (m *MessageSizeBytes) Int() int {
+func (m *SizeBytes) Int() int {
 	return int(*m)
 }
 
@@ -67,16 +67,23 @@ type Config struct {
 	} `yaml:"engine"`
 
 	Network struct {
-		Address        string           `yaml:"address"`
-		MaxConnections uint             `yaml:"max_connections"`
-		MaxMessageSize MessageSizeBytes `yaml:"max_message_size"`
-		IdleTimeout    time.Duration    `yaml:"idle_timeout"`
+		Address        string        `yaml:"address"`
+		MaxConnections uint          `yaml:"max_connections"`
+		MaxMessageSize SizeBytes     `yaml:"max_message_size"`
+		IdleTimeout    time.Duration `yaml:"idle_timeout"`
 	} `yaml:"network"`
 
 	Logging struct {
 		Level  string `yaml:"level"`
 		Output string `yaml:"output"`
 	} `yaml:"logging"`
+
+	Wal struct {
+		FlushingBatchSize    int           `yaml:"flushing_batch_size"`
+		FlushingBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
+		MaxSegmentSize       SizeBytes     `yaml:"max_segment_size"`
+		DataDirectory        string        `yaml:"data_directory"`
+	} `yaml:"wal"`
 }
 
 func NewConfigWithDefaults() *Config {
