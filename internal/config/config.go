@@ -61,6 +61,13 @@ func parseBytes(s string) (int, error) {
 	return 0, fmt.Errorf("invalid size value: %q", s)
 }
 
+type Wal struct {
+	FlushingBatchSize    int           `yaml:"flushing_batch_size"`
+	FlushingBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
+	MaxSegmentSize       SizeBytes     `yaml:"max_segment_size"`
+	DataDirectory        string        `yaml:"data_directory"`
+}
+
 type Config struct {
 	Engine struct {
 		Type string `yaml:"type"`
@@ -78,12 +85,7 @@ type Config struct {
 		Output string `yaml:"output"`
 	} `yaml:"logging"`
 
-	Wal struct {
-		FlushingBatchSize    int           `yaml:"flushing_batch_size"`
-		FlushingBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
-		MaxSegmentSize       SizeBytes     `yaml:"max_segment_size"`
-		DataDirectory        string        `yaml:"data_directory"`
-	} `yaml:"wal"`
+	Wal Wal `yaml:"wal"`
 }
 
 func NewConfigWithDefaults() *Config {
